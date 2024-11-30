@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Home</title>
+
+   <!-- Font Awesome CDN -->
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css">
+
+   <!-- Custom CSS -->
+   <link rel="stylesheet" href="css/style.css">
+
+   <style>
+      /* Ensure the boxes are rectangular */
+      .home-grid .box {
+         width: 48%; /* Adjust width for all boxes */
+         height: 250px; /* Set height to make them rectangular */
+         margin: 10px;
+         padding: 20px;
+         border-radius: 8px;
+         box-sizing: border-box;
+         text-align: center;
+         transition: 0.3s;
+         display: inline-block;
+      }
+
+      /* Adjust size for specific boxes */
+      .home-grid .box.gamification, 
+      .home-grid .box.quiz, 
+      .home-grid .box.story, 
+      .home-grid .box.audiobooks {
+         width: 22%; /* Set smaller size */
+         height: 300px; /* Adjust height */
+      }
+
+      /* Keep spacing consistent */
+      .home-grid .box-container {
+         display: flex;
+         flex-wrap: wrap;
+         justify-content: space-between;
+      }
+
+      /* File upload form styling */
+      #audiobookUploadForm {
+         margin-top: 20px;
+      }
+
+      #status {
+         margin-top: 10px;
+         font-size: 14px;
+         color: green;
+      }
+
+      #preview audio {
+         margin-top: 15px;
+         width: 100%;
+      }
+   </style>
+</head>
+<body>
+
+<header class="header">
+   <section class="flex">
+      <a href="home.html" class="logo">
+         <span style="font-weight: bold; font-size: 30px; color: #000000;">Edu-Ease: Your Personalized Learning Companion</span>
+      </a>
+
+      <form action="search.html" method="post" class="search-form">
+         <input type="text" name="search_box" required placeholder="Search courses..." maxlength="100">
+         <button type="submit" class="fas fa-search"></button>
+      </form>
+
+      <div class="icons">
+         <div id="menu-btn" class="fas fa-bars"></div>
+         <div id="search-btn" class="fas fa-search"></div>
+         <div id="user-btn" class="fas fa-user"></div>
+         <div id="toggle-btn" class="fas fa-sun"></div>
+      </div>
+   </section>
+</header>
+
+<div class="side-bar">
+   <div id="close-btn">
+      <i class="fas fa-times"></i>
+   </div>
+   <nav class="navbar">
+      <a href="home.html"><i class="fas fa-home"></i><span>Home</span></a>
+      <a href="about.html"><i class="fas fa-question"></i><span>About</span></a>
+      <a href="courses.html"><i class="fas fa-graduation-cap"></i><span>Courses</span></a>
+      <a href="teachers.html"><i class="fas fa-chalkboard-user"></i><span>Teachers</span></a>
+      <a href="contact.html"><i class="fas fa-headset"></i><span>Contact us</span></a>
+   </nav>
+</div>
+
+<section class="home-grid">
+   <h1 class="heading">Activities!!</h1>
+   <div class="box-container">
+      <div class="box audiobooks">
+         <h3 class="title">Audiobooks</h3>
+         <p class="description">Upload and listen to your favorite books on the go!</p>
+
+         <!-- Audiobook upload form -->
+         <form id="audiobookUploadForm">
+            <label for="audiobook">Select Audiobook:</label>
+            <input type="file" id="audiobook" accept="audio/*" required>
+            <button type="submit" class="inline-btn">Upload</button>
+         </form>
+
+         <div id="status"></div>
+         <div id="preview"></div>
+      </div>
+   </div>
+</section>
+
+<footer class="footer">
+   &copy; Copyright @ 2024 by <span>Team Meticulous</span> | All rights reserved!
+</footer>
+
+<!-- Supabase JS Library -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<script>
+   // Initialize Supabase
+   const SUPABASE_URL = "YOUR_SUPABASE_URL"; // Replace with your Supabase Project URL
+   const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY"; // Replace with your Supabase anon key
+   const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+   // Handle Audiobook Upload
+   document.getElementById("audiobookUploadForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const fileInput = document.getElementById("audiobook");
+      const status = document.getElementById("status");
+      const preview = document.getElementById("preview");
+
+      if (fileInput.files.length === 0) {
+         status.textContent = "Please select a file.";
+         return;
+      }
+
+      const file = fileInput.files[0];
+      const fileName = `${Date.now()}-${file.name}`; // Generate unique file name
+      status.textContent = "Uploading...";
+
+      try {
+         const { data, error } = await supabase.storage
+            .from("audiobooks") // Replace with your bucket name
+            .upload(fileName, file);
+
+         if (error) throw error;
+
+         // Get Public URL
+         const { publicURL } = supabase.storage.from("audiobooks").getPublicUrl(fileName);
+
+         status.textContent = "Upload successful!";
+         preview.innerHTML = `
+            <p>File URL: <a href="${publicURL}" target="_blank">${publicURL}</a></p>
+            <audio controls>
+               <source src="${publicURL}" type="${file.type}">
+               Your browser does not support the audio element.
+            </audio>
+         `;
+      } catch (error) {
+         status.textContent = "Upload failed. Please try again.";
+         console.error(error);
+      }
+   });
+</script>
+
+</body>
+</html>
